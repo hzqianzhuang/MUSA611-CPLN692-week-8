@@ -116,6 +116,11 @@ Task 6 (stretch): Refocus the map to roughly the bounding box of your route
 
 ===================== */
 
+var url,routeUrl;
+var your_mapbox_token = 'pk.eyJ1IjoiaHpxaWFuemh1YW5nIiwiYSI6ImNrOTNlNW10eTAxYmszcnFtNW81cmowMnMifQ.ifGeFS5cD7B5sz90hsWdQA';
+var O_lat, O_lon;
+var geoJson;
+
 var state = {
   position: {
     marker: null,
@@ -139,6 +144,8 @@ var updatePosition = function(lat, lng, updated) {
   state.position.marker = L.circleMarker([lat, lng], {color: "blue"});
   state.position.updated = updated;
   state.position.marker.addTo(map);
+  O_lat = lat;
+  O_lon = lng;
   goToOrigin(lat, lng);
 };
 
@@ -167,8 +174,45 @@ $(document).ready(function() {
   // click handler for the "calculate" button (probably you want to do something with this)
   $("#calculate").click(function(e) {
     var dest = $('#dest').val();
-    console.log(dest);
+    url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${dest}.json?access_token=${your_mapbox_token}`
+    console.log(url);
+    $.ajax(url).done(function(data) {
+      var parsedData = JSON.parse(JSON.stringify(data));
+      var coordinate = parsedData.features[0].geometry.coordinates;
+
+      var DMark = L.circleMarker([coordinate[1], coordinate[0]], {color: "blue"});
+      DMark.addTo(map);
+
+      var coordinates = O_lon+","+O_lat+";"+coordinate[0]+","+coordinate[1];
+      routeUrl = `https://api.mapbox.com/directions/v5/mapbox/cycling/${coordinates}?access_token=${your_mapbox_token}`;
+      console.log(routeUrl);
+      $.ajax(routeUrl).done(function(data){
+        var parsedData = JSON.parse(JSON.stringify(data));
+        var code = parsedData.routes[0].geometry;
+        var time = parsedData.routes[0].duration;
+        var distance = (parsedData.routes[0].distance)/1000;
+        console.log(time+" "+distance);
+        $("#time > h1").text(`travel time = ${time} second`);
+        $("#distance > h1").text(`distance = ${distance} km`);
+
+        console.log(code);
+        geoJson = polyline.toGeoJSON(code);
+        console.log(geoJson);
+        var myStyle = {
+            "color": "#ff7800",
+            "weight": 5,
+            "opacity": 0.65
+        };
+        
+        L.geoJSON(geoJson, {
+            style: myStyle
+        }).addTo(map);
+        });
+
+    });
+
   });
 
 });
+
 
