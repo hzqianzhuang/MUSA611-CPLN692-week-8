@@ -122,11 +122,11 @@ map.on('draw:created', function (e) {
     state.markers.push(layer);
     coordinates = coordinates + layer._latlng.lng +","+layer._latlng.lat;
 
-    routeUrl = `https://api.mapbox.com/directions/v5/mapbox/cycling/${coordinates}?access_token=${your_mapbox_token}`;
+    routeUrl = `https://api.mapbox.com/optimized-trips/v1/mapbox/driving/${coordinates}?access_token=${your_mapbox_token}`;
     console.log(routeUrl);
     $.ajax(routeUrl).done(function(data){
       var parsedData = JSON.parse(JSON.stringify(data));
-      var code = parsedData.routes[0].geometry;
+      var code = parsedData.trips[0].geometry;
 
       console.log(code);
       geoJson = polyline.toGeoJSON(code);
