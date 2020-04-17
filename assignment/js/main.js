@@ -43,6 +43,11 @@ Keeping track of `marker1`, `marker2`, and `line` will help us remove
 them from the map when we need to reset the map.
 ---------------- */
 
+var count = 0;
+var coordinates;
+var your_mapbox_token = 'pk.eyJ1IjoiaHpxaWFuemh1YW5nIiwiYSI6ImNrOTNlNW10eTAxYmszcnFtNW81cmowMnMifQ.ifGeFS5cD7B5sz90hsWdQA';
+
+
 var state = {
   markers: [],
   line: undefined,
@@ -109,4 +114,41 @@ map.on('draw:created', function (e) {
   var id = L.stamp(layer); // The unique Leaflet ID for the
 
   console.log('Do something with the layer you just created:', layer, layer._latlng);
+  count = count+1;
+  count = count%2;
+  console.log("count = ", count);
+  if(count == 0){
+    map.addLayer(layer);
+    state.markers.push(layer);
+    coordinates = coordinates + layer._latlng.lng +","+layer._latlng.lat;
+
+    routeUrl = `https://api.mapbox.com/directions/v5/mapbox/cycling/${coordinates}?access_token=${your_mapbox_token}`;
+    console.log(routeUrl);
+    $.ajax(routeUrl).done(function(data){
+      var parsedData = JSON.parse(JSON.stringify(data));
+      var code = parsedData.routes[0].geometry;
+
+      console.log(code);
+      geoJson = polyline.toGeoJSON(code);
+      console.log(geoJson);
+      var myStyle = {
+          "color": "#ff7800",
+          "weight": 5,
+          "opacity": 0.65
+      };
+      
+      var line = L.geoJSON(geoJson, {
+          style: myStyle
+      });
+      line.addTo(map);
+      state.line = line;
+      });
+
+
+    $('#button-reset').show();
+  }else{
+    map.addLayer(layer);
+    state.markers.push(layer);
+    coordinates = layer._latlng.lng +","+layer._latlng.lat+";";
+  }
 });
